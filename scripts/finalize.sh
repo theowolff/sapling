@@ -22,7 +22,12 @@ cat > .gitignore <<EOF
 
 # Keep these root files
 !/.gitignore
-!/project-sync.sh
+
+# Keep only scripts/sync.sh (ignore any other scripts)
+!/scripts/
+!/scripts/sync.sh
+/scripts/*
+!/scripts/sync.sh
 
 # Re-allow wp-content + themes directory (directories only)
 !/wp-content/
@@ -43,8 +48,8 @@ cat > .gitignore <<EOF
 EOF
 echo "[finalize] Wrote .gitignore"
 
-# 2) Install project-sync.sh (rehydrates core + parent, links child) — no env writes
-cat > project-sync.sh <<'EOSH'
+# 2) Install sync.sh (rehydrates core + parent, links child) — no env writes
+cat > sync.sh <<'EOSH'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -106,15 +111,15 @@ $DC exec php bash -lc "set -e; cd wp-content/themes/$SLUG; \
     ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \
   fi" || true
 
-./scripts/generate-salts.sh
-./scripts/wp-admin.sh
-./scripts/activate-child.sh
+./scripts/salts.sh
+./scripts/admin.sh
+./scripts/child.sh activate
 
 echo
 echo "✅ Sync complete."
 EOSH
-chmod +x project-sync.sh
-echo "[finalize] Installed project-sync.sh"
+chmod +x sync.sh
+echo "[finalize] Installed sync.sh"
 
 # 3) Remove nested repos (parent + child)
 [ -d "wp-content/themes/twwp-theme/.git" ] && rm -rf "wp-content/themes/twwp-theme/.git"

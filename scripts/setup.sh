@@ -52,9 +52,9 @@ npm_install_block='if [ -f package-lock.json ]; then npm ci; else npm i; npm i -
 $DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc 'set -e; cd wp-content/themes/twwp-theme; eval "$NPM_INSTALL_BLOCK"; npx gulp dev' || true
 
 # Patch child identity, then rewrite prefixes based on slug
-./scripts/patch-child.sh
+./scripts/child.sh patch
+./scripts/child.sh prefix
 SLUG="${CHILD_THEME_SLUG:-twwp-child}"
-./scripts/prefix-child-functions.sh
 
 # Build child ON HOST (avoid esbuild mismatch)
 echo "[setup] Installing child theme deps on HOST (wp-content/themes/${SLUG})..."
@@ -81,10 +81,10 @@ $DC exec php bash -lc "set -e; cd wp-content/themes/${SLUG}; \
     ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \
   fi" || true
 
-# Install WP + admin, then activate child (wp-admin writes creds to SUMMARY)
-./scripts/generate-salts.sh
-./scripts/wp-admin.sh
-./scripts/activate-child.sh
+# Install WP + admin, then activate child (admin writes creds to SUMMARY)
+./scripts/salts.sh
+./scripts/admin.sh
+./scripts/child.sh activate
 
 DEFAULT_HOME="http://${SLUG}.localhost:8080"
 {
@@ -101,13 +101,16 @@ else
   echo "[setup] Skipped finalization (SKIP_FINALIZE=1)"
 fi
 
-# --- Print the important info LAST (after any git push logs) ---
+# --- Print the important info ---
 if [ -s "$SUMMARY" ]; then
+  # ANSI colors (fallback-safe)
+  GREEN="$(tput setaf 2 2>/dev/null || echo '\033[0;32m')"
+  RESET="$(tput sgr0 2>/dev/null || echo '\033[0m')"
+
   echo ""
-  echo "===================="
-  echo " Setup Summary"
-  echo "===================="
-  cat "$SUMMARY"
-  echo "===================="
-  # don’t commit this; it’s already excluded by .gitignore pattern we generate
+  echo -e "${GREEN}===================="
+  echo -e " Setup Summary"
+  echo -e "====================${RESET}"
+  sed 's/^/'"${GREEN}"'/' "$SUMMARY"
+  echo -e "${RESET}${GREEN}====================${RESET}"
 fi

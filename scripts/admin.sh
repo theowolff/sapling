@@ -41,15 +41,15 @@ DB_HOST_INSIDE="${DB_HOST:-db}"   # in Docker, use the service name (e.g., 'db')
 DB_USER_INSIDE="${DB_USER:-root}"
 DB_PASS_INSIDE="${DB_PASSWORD:-}"
 
-echo "[wp-admin] Waiting for database at ${DB_HOST_INSIDE}..."
+echo "[admin] Waiting for database at ${DB_HOST_INSIDE}..."
 for i in {1..30}; do
   if $DC exec php bash -lc "mysql -h '${DB_HOST_INSIDE}' -u'${DB_USER_INSIDE}' -p'${DB_PASS_INSIDE}' -e 'SELECT 1' >/dev/null 2>&1"; then
-    echo "[wp-admin] DB is up."
+    echo "[admin] DB is up."
     break
   fi
   sleep 2
   if [ "$i" -eq 30 ]; then
-    echo "[wp-admin] ERROR: Database not reachable. Check DB_HOST/DB_USER/DB_PASSWORD and the db service logs."
+    echo "[admin] ERROR: Database not reachable. Check DB_HOST/DB_USER/DB_PASSWORD and the db service logs."
     exit 1
   fi
 done
@@ -57,7 +57,7 @@ done
 
 # Install WordPress (idempotent)
 if $DC exec php wp --allow-root core is-installed --path="$WP_PATH" >/dev/null 2>&1; then
-  echo "[wp-admin] WordPress already installed."
+  echo "[admin] WordPress already installed."
 else
   $DC exec php wp --allow-root core install \
     --path="$WP_PATH" \
@@ -79,4 +79,4 @@ $DC exec php wp --allow-root user create "$ADMIN_USER" "$ADMIN_EMAIL" --role=adm
   echo "Login: ${SITE_URL}/wp/wp-login.php"
 } >> "$SUMMARY"
 
-echo "[wp-admin] Credentials captured for summary."
+echo "[admin] Credentials captured for summary."

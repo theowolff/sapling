@@ -62,7 +62,7 @@ This will:
 
 - **Regenerate salts**  
   ```bash
-  ./scripts/generate-salts.sh
+  ./scripts/salts.sh
   ```
 
 ---
@@ -140,7 +140,7 @@ docker compose up -d
 
 ## 🗝 Security Notes
 - Salts/keys in `wp-config.php` are auto-generated via [WordPress.org API](https://api.wordpress.org/secret-key/1.1/salt/).  
-- Re-run `./scripts/generate-salts.sh` anytime to rotate keys (forces all users to log in again).  
+- Re-run `./scripts/salts.sh` anytime to rotate keys (forces all users to log in again).  
 - Avoid committing real salts, passwords, or DB credentials to version control.  
 
 ---
