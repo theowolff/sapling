@@ -80,6 +80,7 @@ $DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc 'set -e; cd wp-c
 # ------------------------------------------------------------------------------
 ./scripts/child.sh patch
 ./scripts/child.sh prefix
+./scripts/child.sh docblocks
 SLUG="${CHILD_THEME_SLUG:-sapling-child}"
 
 # ------------------------------------------------------------------------------
