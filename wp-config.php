@@ -29,6 +29,37 @@
     define('WP_CONTENT_DIR', __DIR__ . CONTENT_DIR);
     define('WP_CONTENT_URL', WP_HOME . CONTENT_DIR);
 
+    // WP memory defaults
+    if(! function_exists('twwp_set_memory_defaults')) {
+
+        function twwp_set_memory_defaults($default = '128M', $max = '512M') {
+
+            if(! defined('WP_MEMORY_LIMIT')) {
+                $memory_env_val = $_ENV['WP_MEMORY_LIMIT'] ?? $_SERVER['WP_MEMORY_LIMIT'] ?? null;
+                define('WP_MEMORY_LIMIT', $memory_env_val ?: $default);
+            }
+
+            if(! defined('WP_MAX_MEMORY_LIMIT')) {
+                $memory_env_val = $_ENV['WP_MAX_MEMORY_LIMIT'] ?? $_SERVER['WP_MAX_MEMORY_LIMIT'] ?? null;
+                define('WP_MAX_MEMORY_LIMIT', $memory_env_val ?: $max);
+            }
+        }
+    }
+
+    twwp_set_memory_defaults('128M', '256M');
+
+    // Environment-specific additional settings
+    $env_type = $_ENV['WP_ENV'] ?? 'development';
+    $env_config = __DIR__ . '/environments/' . $env_type . '.php';
+
+    // Require the relevant environment file
+    if(file_exists($env_config)) {
+        require_once $env_config;
+    } else {
+        // Fallback if missing
+        require_once __DIR__ . '/environments/development.php';
+    }
+
     // Define ABSPATH and require the WordPress settings file
     if (! defined('ABSPATH')) {
         define('ABSPATH', __DIR__ . '/wp/');
