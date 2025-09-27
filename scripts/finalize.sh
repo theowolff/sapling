@@ -38,6 +38,8 @@ cat > .gitignore <<EOF
 # Include ONLY the child theme (everything inside it)
 !/wp-content/themes/${SLUG}/
 !/wp-content/themes/${SLUG}/**
+/wp-content/themes/${SLUG}/node_modules/ # Ignore child node_modules if present
+/wp-content/themes/${SLUG}/dist/         # Ignore child dist if present
 
 # Force-ignore everything else under wp-content
 /wp-content/plugins/
