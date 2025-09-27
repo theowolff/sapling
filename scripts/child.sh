@@ -3,7 +3,7 @@
 # child.sh - Child theme setup and activation for Sapling local dev
 #
 # @package sapling
-# author theowolff
+# @author theowolff
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -35,7 +35,6 @@ WP_PATH="/var/www/html/wp"
 # ------------------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------------------
-# Sanitize a slug to a prefix (lowercase, non-alnum to _, collapse/trim, suffix _)
 sanitize_slug_to_prefix() {
   local s="$1"
   local lower; lower="$(printf '%s' "$s" | tr '[:upper:]' '[:lower:]')"
@@ -49,7 +48,6 @@ sanitize_slug_to_prefix() {
 do_patch() {
   echo "[child] Patching child theme identity…"
 
-  # Rename folder from template repo name to desired slug
   if [ -d "${THEMES_DIR}/${CHILD_REPO_DIR}" ] && [ "${CHILD_REPO_DIR}" != "${SLUG}" ]; then
     rm -rf "${THEMES_DIR}/${SLUG}" || true
     mv "${THEMES_DIR}/${CHILD_REPO_DIR}" "${THEMES_DIR}/${SLUG}"
@@ -78,7 +76,6 @@ EOF
 
 # ------------------------------------------------------------------------------
 # Rewrite function prefix splng_ → based on slug
-# Also normalize PHP docblocks: set `@package <slug>` across the theme.
 # ------------------------------------------------------------------------------
 do_prefix() {
   echo "[child] Rewriting function prefix splng_ → based on slug '${SLUG}'…"
@@ -91,20 +88,27 @@ do_prefix() {
   fi
 
   export NEW_PREFIX="$prefix"
-  # Replace only token-start "splng_" in PHP files; skip vendor/node_modules/dist
   find "$theme_dir" -type f -name "*.php" \
     -not -path "*/vendor/*" -not -path "*/node_modules/*" -not -path "*/dist/*" -print0 \
     | xargs -0 perl -0777 -i -pe 's/\bsplng_/$ENV{NEW_PREFIX}/g'
 
   echo "[child] Prefix rewrite complete → ${NEW_PREFIX}"
+}
 
-  # --- Docblock @package normalization ---
-  # Set @package to the raw slug (as requested).
+# ------------------------------------------------------------------------------
+# Normalize PHP docblocks: set @package to slug across the theme
+# ------------------------------------------------------------------------------
+do_docblocks() {
   echo "[child] Normalizing PHP docblocks: @package → ${SLUG}"
-  export NEW_PACKAGE="$SLUG"
+
+  local theme_dir="${THEMES_DIR}/${SLUG}"
+  [ -d "$theme_dir" ] || { echo "[child] ERROR: theme dir not found: $theme_dir"; exit 1; }
+
   find "$theme_dir" -type f -name "*.php" \
     -not -path "*/vendor/*" -not -path "*/node_modules/*" -not -path "*/dist/*" -print0 \
-    | xargs -0 perl -0777 -i -pe 's@(^\s*\*\s*@package\s+)[^\r\n]+@$1$ENV{NEW_PACKAGE}@mg'
+    | xargs -0 perl -0777 -i -pe "s/(\\n\\s*\\*\\s*\\@package\\s+)[^\\r\\n]*/\\1${SLUG}/g"
+
+  echo "[child] Docblocks updated."
 }
 
 # ------------------------------------------------------------------------------
@@ -117,11 +121,12 @@ do_activate() {
 }
 
 # ------------------------------------------------------------------------------
-# Run all setup steps: patch, prefix, activate
+# Run all setup steps: patch, prefix, docblocks, activate
 # ------------------------------------------------------------------------------
 do_all() {
   do_patch
   do_prefix
+  do_docblocks
   do_activate
 }
 
@@ -130,9 +135,10 @@ do_all() {
 # ------------------------------------------------------------------------------
 cmd="${1:-all}"
 case "$cmd" in
-  all)      do_all      ;;
-  patch)    do_patch    ;;
-  prefix)   do_prefix   ;;
-  activate) do_activate ;;
+  all)        do_all        ;;
+  patch)      do_patch      ;;
+  prefix)     do_prefix     ;;
+  docblocks)  do_docblocks  ;;
+  activate)   do_activate   ;;
   *) echo "Unknown command: $cmd"; exit 1 ;;
 esac
