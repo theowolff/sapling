@@ -10,14 +10,15 @@ services:
       - db
   db:
     image: mariadb:11
-    container_name: twwp-core-db
     environment:
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wpuser
-      MYSQL_PASSWORD: wppass
-      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+    ports:
+      - "3307:3306"
     volumes:
-      - ./data-db:/var/lib/mysql
+      - dbdata:/var/lib/mysql
   adminer:
     image: adminer:4
     container_name: twwp-core-adminer
@@ -25,3 +26,6 @@ services:
       - "8081:8080"
     depends_on:
       - db
+
+volumes:
+  dbdata: {}
