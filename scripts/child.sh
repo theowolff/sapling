@@ -56,10 +56,12 @@ do_patch() {
   if [ -f "$style" ]; then
     cat > "${style}.tmp" <<EOF
 /*
-Theme Name: ${NAME}
-Template: ${PARENT_DIR}
-Text Domain: ${SLUG}
-Version: 0.2.0
+ * Theme Name: ${NAME}
+ * Author: Theodore Wolff
+ * Author URI: https://theo.gg
+ * Version: 1.0.0
+ * Template: ${PARENT_DIR}
+ * Text Domain: ${SLUG}
 */
 EOF
     # keep anything after the first line of original (if present)
