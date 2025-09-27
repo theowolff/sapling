@@ -62,7 +62,7 @@ else
   $DC exec php wp --allow-root core install \
     --path="$WP_PATH" \
     --url="$SITE_URL" \
-    --title="${CHILD_THEME_NAME:-twwp site}" \
+    --title="${CHILD_THEME_NAME:-sapling site}" \
     --admin_user="$ADMIN_USER" \
     --admin_password="$PASS" \
     --admin_email="$ADMIN_EMAIL"

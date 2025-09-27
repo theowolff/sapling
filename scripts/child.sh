@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage:
-#   ./scripts/child.sh                # run all: patch + prefix + activate
-#   ./scripts/child.sh all
-#   ./scripts/child.sh patch
-#   ./scripts/child.sh prefix
-#   ./scripts/child.sh activate
-#   ./scripts/child.sh help
-
 # --- env + docker compose shim ---
 DC="docker compose"; $DC version >/dev/null 2>&1 || DC="docker-compose"
 
@@ -25,10 +17,10 @@ load_env
 
 # --- paths & inputs ---
 THEMES_DIR="wp-content/themes"
-PARENT_DIR="${PARENT_DIR:-twwp-theme}"         # can override via env if needed
-CHILD_REPO_DIR="${CHILD_REPO_DIR:-twwp-theme-child}"
+PARENT_DIR="${PARENT_DIR:-sapling-theme}"         # can override via env if needed
+CHILD_REPO_DIR="${CHILD_REPO_DIR:-sapling-theme-child}"
 
-SLUG="${CHILD_THEME_SLUG:-twwp-child}"
+SLUG="${CHILD_THEME_SLUG:-sapling-child}"
 NAME="${CHILD_THEME_NAME:-Your Child Theme}"
 
 WP_PATH="/var/www/html/wp"
@@ -74,7 +66,7 @@ EOF
 }
 
 do_prefix() {
-  echo "[child] Rewriting function prefix twwp_ → based on slug '${SLUG}'…"
+  echo "[child] Rewriting function prefix splng_ → based on slug '${SLUG}'…"
   local prefix; prefix="$(sanitize_slug_to_prefix "$SLUG")"
   local theme_dir="${THEMES_DIR}/${SLUG}"
 
@@ -84,10 +76,10 @@ do_prefix() {
   fi
 
   export NEW_PREFIX="$prefix"
-  # Replace only token-start "twwp_" (word boundary) in PHP files, skip vendor/node_modules/dist
+  # Replace only token-start "splng_" (word boundary) in PHP files, skip vendor/node_modules/dist
   find "$theme_dir" -type f -name "*.php" \
     -not -path "*/vendor/*" -not -path "*/node_modules/*" -not -path "*/dist/*" -print0 \
-    | xargs -0 perl -0777 -i -pe 's/\btwwp_/$ENV{NEW_PREFIX}/g'
+    | xargs -0 perl -0777 -i -pe 's/\bsplng_/$ENV{NEW_PREFIX}/g'
 
   echo "[child] Prefix rewrite complete → ${NEW_PREFIX}"
 }

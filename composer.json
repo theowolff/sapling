@@ -1,5 +1,5 @@
 {
-  "name": "theo/twwp-core",
+  "name": "theo/sapling",
   "type": "project",
   "description": "A custom WordPress setup powering all websites built by me.",
   "authors": [
@@ -9,7 +9,7 @@
     }
   ],
   "keywords": [
-    "wp", "twwp", "theo", "wolff", "theo.gg", "wordpress", "starter", "theme", "plugin", "development", "boilerplate", "scaffolding"
+    "wp", "sapling", "theo", "wolff", "theo.gg", "wordpress", "starter", "theme", "plugin", "development", "boilerplate", "scaffolding"
   ],
   "prefer-stable": true,
   "config": {

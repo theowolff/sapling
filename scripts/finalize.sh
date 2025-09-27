@@ -53,7 +53,7 @@ cat > .gitignore <<EOF
 
 # Force-ignore everything else under wp-content we don't want
 /wp-content/plugins/
-/wp-content/themes/twwp-theme/
+/wp-content/themes/sapling-theme/
 /wp-content/uploads/
 /wp-content/mu-plugins/
 /wp-content/cache/
@@ -70,8 +70,8 @@ cat > scripts/sync.sh <<'EOSH'
 #!/usr/bin/env bash
 set -euo pipefail
 
-CORE_REPO="${CORE_REPO:-https://github.com/theowolff/twwp-infra.git}"
-PARENT_REPO="${PARENT_REPO:-https://github.com/theowolff/twwp-theme.git}"
+CORE_REPO="${CORE_REPO:-https://github.com/theowolff/sapling-infra.git}"
+PARENT_REPO="${PARENT_REPO:-https://github.com/theowolff/sapling-theme.git}"
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 CORE_DIR="$ROOT/core"
@@ -96,12 +96,12 @@ fi
 
 # 2) clone/update parent
 mkdir -p "$CORE_DIR/wp-content/themes"
-if [ ! -d "$CORE_DIR/wp-content/themes/twwp-theme/.git" ]; then
+if [ ! -d "$CORE_DIR/wp-content/themes/sapling-theme/.git" ]; then
   echo "[sync] Cloning parent theme"
-  git clone "$PARENT_REPO" "$CORE_DIR/wp-content/themes/twwp-theme"
+  git clone "$PARENT_REPO" "$CORE_DIR/wp-content/themes/sapling-theme"
 else
   echo "[sync] Updating parent theme"
-  (cd "$CORE_DIR/wp-content/themes/twwp-theme" && git pull --ff-only || true)
+  (cd "$CORE_DIR/wp-content/themes/sapling-theme" && git pull --ff-only || true)
 fi
 
 # 3) link child (from this repo) into core
@@ -118,7 +118,7 @@ DC="docker compose"; $DC version >/dev/null 2>&1 || DC="docker-compose"
 
 $DC up -d --build
 $DC exec php composer install
-$DC exec php bash -lc 'set -e; cd wp-content/themes/twwp-theme; ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev' || true
+$DC exec php bash -lc 'set -e; cd wp-content/themes/sapling-theme; ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev' || true
 
 # Child build inside container ONLY if we are not using host node for the child
 $DC exec php bash -lc "set -e; cd wp-content/themes/$SLUG; \
@@ -139,7 +139,7 @@ chmod +x scripts/sync.sh
 echo "[finalize] Installed sync.sh"
 
 # 3) Remove nested repos (parent + child)
-[ -d "wp-content/themes/twwp-theme/.git" ] && rm -rf "wp-content/themes/twwp-theme/.git"
+[ -d "wp-content/themes/sapling-theme/.git" ] && rm -rf "wp-content/themes/sapling-theme/.git"
 [ -d "wp-content/themes/${SLUG}/.git" ] && rm -rf "wp-content/themes/${SLUG}/.git"
 
 # 4) Remove root git (wipe history)

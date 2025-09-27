@@ -25,18 +25,18 @@ cd wp-content/themes
 
 # Clone/update parent
 if [ -z "${THEME_REPO:-}" ]; then echo "ERROR: THEME_REPO not set in .env"; exit 1; fi
-if [ ! -d "twwp-theme/.git" ]; then
-  git clone "$THEME_REPO" twwp-theme
+if [ ! -d "sapling-theme/.git" ]; then
+  git clone "$THEME_REPO" sapling-theme
 else
-  (cd twwp-theme && git pull --ff-only)
+  (cd sapling-theme && git pull --ff-only)
 fi
 
 # Clone/update child template repo (will be renamed/patched)
 if [ -z "${CHILD_REPO:-}" ]; then echo "ERROR: CHILD_REPO not set in .env"; exit 1; fi
-if [ ! -d "twwp-theme-child/.git" ]; then
-  git clone "$CHILD_REPO" twwp-theme-child
+if [ ! -d "sapling-theme-child/.git" ]; then
+  git clone "$CHILD_REPO" sapling-theme-child
 else
-  (cd twwp-theme-child && git pull --ff-only)
+  (cd sapling-theme-child && git pull --ff-only)
 fi
 
 cd ../../
@@ -49,12 +49,12 @@ $DC exec php composer install
 npm_install_block='if [ -f package-lock.json ]; then npm ci; else npm i; npm i --package-lock-only >/dev/null 2>&1 || true; fi'
 
 # Build parent (dev) INSIDE container (Linux)
-$DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc 'set -e; cd wp-content/themes/twwp-theme; eval "$NPM_INSTALL_BLOCK"; npx gulp dev' || true
+$DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc 'set -e; cd wp-content/themes/sapling-theme; eval "$NPM_INSTALL_BLOCK"; npx gulp dev' || true
 
 # Patch child identity, then rewrite prefixes based on slug
 ./scripts/child.sh patch
 ./scripts/child.sh prefix
-SLUG="${CHILD_THEME_SLUG:-twwp-child}"
+SLUG="${CHILD_THEME_SLUG:-sapling-child}"
 
 # Build child ON HOST (avoid esbuild mismatch)
 echo "[setup] Installing child theme deps on HOST (wp-content/themes/${SLUG})..."

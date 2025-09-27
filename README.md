@@ -1,26 +1,27 @@
-# twwp-core
+![Sapling Logo](./sapling.svg)
+# Sapling
 
 This repository manages the full WordPress stack (core, parent + child themes, plugins) using Docker, Composer, and WP-CLI.  
-It pulls in **twwp-theme** (parent) and **twwp-theme-child** (child), builds both asset pipelines, and activates the child theme automatically.
+It pulls in **sapling-theme** (parent) and **sapling-theme-child** (child), builds both asset pipelines, and activates the child theme automatically.
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
 All key settings are defined in `.env`:
 
-- `CHILD_THEME_SLUG` → folder name & text domain for the child theme  
-- `CHILD_THEME_NAME` → display name for the child theme  
-- `ADMIN_USER` → admin username  
-- `ADMIN_EMAIL` → admin email address  
-- `ADMIN_PASSWORD` (optional) → if empty, a strong password is auto-generated and stored in `.admin_pass`  
-- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST` → database connection  
-- `TABLE_PREFIX` → DB table prefix (default: `wp_`)  
-- `WP_HOME` → site URL (defaults to `http://<CHILD_THEME_SLUG>.localhost:8080`)  
+- `CHILD_THEME_SLUG` → folder name & text domain for the child theme
+- `CHILD_THEME_NAME` → display name for the child theme
+- `ADMIN_USER` → admin username
+- `ADMIN_EMAIL` → admin email address
+- `ADMIN_PASSWORD` (optional) → if empty, a strong password is auto-generated and stored in `.admin_pass`
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST` → database connection
+- `TABLE_PREFIX` → DB table prefix (default: `wp_`)
+- `WP_HOME` → site URL (defaults to `http://<CHILD_THEME_SLUG>.localhost:8080`)
 
 ---
 
-## 🚀 Quick Start (Development)
+## Quick Start (Development)
 
 ```bash
 cp .env.example .env
@@ -38,46 +39,46 @@ This will:
 
 ---
 
-## 📦 Development Workflow
+## Development Workflow
 
-- **Start stack**  
+- **Start stack**
   ```bash
   docker compose up -d
   ```
 
-- **Watch assets**  
+- **Watch assets**
   ```bash
   ./scripts/dev.sh
   ```
 
-- **Production build**  
+- **Production build**
   ```bash
   ./scripts/build.sh
   ```
 
-- **Access container shell**  
+- **Access container shell**
   ```bash
   ./scripts/ssh.sh
   ```
 
-- **Regenerate salts**  
+- **Regenerate salts**
   ```bash
   ./scripts/salts.sh
   ```
 
 ---
 
-## 🌐 Important URLs
+## Important URLs
 
-- WordPress: [http://localhost:8080](http://localhost:8080)  
-- Admin dashboard: [http://localhost:8080/wp-admin](http://localhost:8080/wp-admin)  
-- Adminer (DB GUI): [http://localhost:8081](http://localhost:8081)  
+- WordPress: [http://localhost:8080](http://localhost:8080)
+- Admin dashboard: [http://localhost:8080/wp-admin](http://localhost:8080/wp-admin)
+- Adminer (DB GUI): [http://localhost:8081](http://localhost:8081)
 
 If `WP_HOME` is set in `.env`, replace `localhost:8080` with your chosen domain.
 
 ---
 
-## 📤 Deployment
+## Deployment
 
 ### Prerequisites
 - Docker installed on target server
@@ -87,8 +88,8 @@ If `WP_HOME` is set in `.env`, replace `localhost:8080` with your chosen domain.
 ### Steps
 1. **Clone the repo** onto your server:
    ```bash
-   git clone git@github.com:YOUR_ORG/twwp-core.git
-   cd twwp-core
+   git clone git@github.com:YOUR_ORG/sapling.git
+   cd sapling
    cp .env.example .env
    # edit .env with production values
    ```
@@ -115,15 +116,15 @@ For deploying to a remote Docker server (staging/production):
 
 ```bash
 # Copy files to server
-scp -r . user@server:/var/www/twwp-core
+scp -r . user@server:/var/www/sapling
 
 # SSH into server
 ssh user@server
 
 # Inside server
-cd /var/www/twwp-core
+cd /var/www/sapling
 cp .env.example .env
-# edit .env for production (set domain, DB creds, salts will be generated)
+# edit .env for production
 chmod +x scripts/*.sh
 ./scripts/setup.sh
 ```
@@ -138,16 +139,16 @@ docker compose up -d
 
 ---
 
-## 🗝 Security Notes
-- Salts/keys in `wp-config.php` are auto-generated via [WordPress.org API](https://api.wordpress.org/secret-key/1.1/salt/).  
-- Re-run `./scripts/salts.sh` anytime to rotate keys (forces all users to log in again).  
-- Avoid committing real salts, passwords, or DB credentials to version control.  
+## Security Notes
+
+- Salts/keys in `wp-config.php` are auto-generated via [WordPress.org API](https://api.wordpress.org/secret-key/1.1/salt/).
+- Re-run `./scripts/salts.sh` anytime to rotate keys (forces all users to log in again).
+- Avoid committing real salts, passwords, or DB credentials to version control.
 
 ---
 
-## 📚 References
-- [WordPress.org Documentation](https://wordpress.org/support/)  
-- [WP-CLI Commands](https://developer.wordpress.org/cli/commands/)  
-- [Docker Compose](https://docs.docker.com/compose/)  
+## References
 
----
+- [WordPress.org Documentation](https://wordpress.org/support/)
+- [WP-CLI Commands](https://developer.wordpress.org/cli/commands/)
+- [Docker Compose](https://docs.docker.com/compose/)

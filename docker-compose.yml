@@ -1,7 +1,7 @@
 services:
   php:
     build: .
-    container_name: twwp-core-php
+    container_name: sapling-php
     ports:
       - "8080:80"
     volumes:
@@ -21,7 +21,7 @@ services:
       - dbdata:/var/lib/mysql
   adminer:
     image: adminer:4
-    container_name: twwp-core-adminer
+    container_name: sapling-adminer
     ports:
       - "8081:8080"
     depends_on:

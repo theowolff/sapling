@@ -17,7 +17,7 @@
     $table_prefix = $_ENV['TABLE_PREFIX'] ?? 'wp_';
 
     // Theme slug and default URL
-    $slug = $_ENV['CHILD_THEME_SLUG'] ?? 'twwp-child';
+    $slug = $_ENV['CHILD_THEME_SLUG'] ?? 'sapling-child';
     $def = 'http://' . $slug . '.localhost:8080';
 
     // Wordpress URL settings
@@ -30,9 +30,9 @@
     define('WP_CONTENT_URL', WP_HOME . CONTENT_DIR);
 
     // WP memory defaults
-    if(! function_exists('twwp_set_memory_defaults')) {
+    if(! function_exists('splng_set_memory_defaults')) {
 
-        function twwp_set_memory_defaults($default = '128M', $max = '512M') {
+        function splng_set_memory_defaults($default = '128M', $max = '512M') {
 
             if(! defined('WP_MEMORY_LIMIT')) {
                 $memory_env_val = $_ENV['WP_MEMORY_LIMIT'] ?? $_SERVER['WP_MEMORY_LIMIT'] ?? null;
@@ -46,7 +46,7 @@
         }
     }
 
-    twwp_set_memory_defaults('128M', '256M');
+    splng_set_memory_defaults('128M', '256M');
 
     // Environment-specific additional settings
     $env_type = $_ENV['WP_ENV'] ?? 'development';
