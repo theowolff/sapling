@@ -1,0 +1,9 @@
+node_modules/
+vendor/
+.env
+.admin_pass
+data-db/
+**/dist/
+.DS_Store
+wp-content/*
+!wp-content/.gitkeep

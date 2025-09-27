@@ -1,0 +1,46 @@
+{
+  "name": "theo/twwp-core",
+  "type": "project",
+  "description": "A custom WordPress setup powering all websites built by me.",
+  "authors": [
+    {
+      "name": "Theodore Wolff",
+      "email": "work@theo.gg"
+    }
+  ],
+  "keywords": [
+    "wp", "twwp", "theo", "wolff", "theo.gg", "wordpress", "starter", "theme", "plugin", "development", "boilerplate", "scaffolding"
+  ],
+  "prefer-stable": true,
+  "config": {
+    "preferred-install": "dist",
+    "optimize-autoloader": true,
+    "secure-http": false
+  },
+  "require": {
+    "php": "^8.1",
+    "johnpbloch/wordpress": "^6.6",
+    "vlucas/phpdotenv": "^5.6",
+    "wpackagist-plugin/classic-editor": "^1.6",
+    "wpengine/advanced-custom-fields-pro": "^6.5.1"
+  },
+  "require-dev": {
+    "wpackagist-plugin/wp-migrate-db": "^2.7.5"
+  },
+  "extra": {
+    "wordpress-install-dir": "wp",
+    "installer-paths": {
+      "wp-content/plugins/{$name}/": ["type:wordpress-plugin"]
+    }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://wpackagist.org"
+    },
+    {
+      "type": "composer",	
+      "url": "https://connect.advancedcustomfields.com"	    
+    }
+  ]
+}
