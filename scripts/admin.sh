@@ -1,8 +1,19 @@
+
 #!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# admin.sh - Automated WordPress admin setup for Sapling local dev
+#
+# @package sapling
+# @author theowolff
+# ------------------------------------------------------------------------------
 set -euo pipefail
 
+# Detect docker compose command
+# Globals: DC
 DC="docker compose"; $DC version >/dev/null 2>&1 || DC="docker-compose"
 
+# Load environment variables from .env file if present
+# Usage: load_env
 load_env() {
   if [ -f ".env" ]; then
     set -a
@@ -14,16 +25,18 @@ load_env() {
 }
 load_env
 
-# summary file (repo root)
+# Set up summary file path (repo root)
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SUMMARY="$ROOT/.setup_summary.txt"
 
+# Set WordPress and admin variables
 WP_PATH="/var/www/html/wp"
 SITE_URL="${WP_HOME:-http://localhost:8080}"
 ADMIN_USER="${ADMIN_USER:-admin}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
 
 # Derive admin password (env > saved file > random)
+# Globals: PASS
 if [ -n "${ADMIN_PASSWORD:-}" ]; then
   PASS="$ADMIN_PASSWORD"
 elif [ -f ".admin_pass" ]; then
@@ -33,10 +46,12 @@ else
   echo "$PASS" > .admin_pass
 fi
 
-# Bring services up
+# Start Docker services
 $DC up -d >/dev/null
 
-# --- Wait for DB to be ready ---
+# ------------------------------------------------------------------------------
+# Wait for DB to be ready
+# ------------------------------------------------------------------------------
 DB_HOST_INSIDE="${DB_HOST:-db}"   # in Docker, use the service name (e.g., 'db')
 DB_USER_INSIDE="${DB_USER:-root}"
 DB_PASS_INSIDE="${DB_PASSWORD:-}"
@@ -53,9 +68,11 @@ for i in {1..30}; do
     exit 1
   fi
 done
-# --- end DB wait ---
+# ------------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------------
 # Install WordPress (idempotent)
+# ------------------------------------------------------------------------------
 if $DC exec php wp --allow-root core is-installed --path="$WP_PATH" >/dev/null 2>&1; then
   echo "[admin] WordPress already installed."
 else
@@ -68,11 +85,15 @@ else
     --admin_email="$ADMIN_EMAIL"
 fi
 
+# ------------------------------------------------------------------------------
 # Ensure the admin user exists with the desired password
+# ------------------------------------------------------------------------------
 $DC exec php wp --allow-root user update "$ADMIN_USER" --user_pass="$PASS" --path="$WP_PATH" >/dev/null || \
 $DC exec php wp --allow-root user create "$ADMIN_USER" "$ADMIN_EMAIL" --role=administrator --user_pass="$PASS" --path="$WP_PATH" >/dev/null
 
-# write summary (don’t print now — setup.sh will print after finalize)
+# ------------------------------------------------------------------------------
+# Write summary (don’t print now — setup.sh will print after finalize)
+# ------------------------------------------------------------------------------
 {
   echo "Admin: $ADMIN_USER"
   echo "Pass:  $PASS"
