@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
-[ -f ".env" ] && export $(grep -v '^#' .env | xargs -d '\n') || true
+
+load_env() {
+  if [ -f ".env" ]; then
+    set -a
+    . ./.env
+    set +a
+  fi
+}
+load_env
 
 THEMES_DIR="wp-content/themes"
 PARENT_DIR="twwp-theme"
