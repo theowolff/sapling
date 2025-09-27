@@ -1,19 +1,16 @@
-
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
 # child.sh - Child theme setup and activation for Sapling local dev
 #
 # @package sapling
-# @author theowolff
+# author theowolff
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
 # Detect docker compose command
-# Globals: DC
 DC="docker compose"; $DC version >/dev/null 2>&1 || DC="docker-compose"
 
 # Load environment variables from .env file if present
-# Usage: load_env
 load_env() {
   if [ -f ".env" ]; then
     set -a
@@ -39,8 +36,6 @@ WP_PATH="/var/www/html/wp"
 # Helpers
 # ------------------------------------------------------------------------------
 # Sanitize a slug to a prefix (lowercase, non-alnum to _, collapse/trim, suffix _)
-# Arguments: $1 - slug string
-# Returns: sanitized prefix string
 sanitize_slug_to_prefix() {
   local s="$1"
   local lower; lower="$(printf '%s' "$s" | tr '[:upper:]' '[:lower:]')"
@@ -73,7 +68,6 @@ do_patch() {
  * Text Domain: ${SLUG}
 */
 EOF
-    # Keep anything after the first line of original (if present)
     tail -n +2 "$style" >> "${style}.tmp" 2>/dev/null || true
     mv "${style}.tmp" "$style"
     echo "[child] Updated style.css header (Theme Name='${NAME}', Text Domain='${SLUG}', Template='${PARENT_DIR}')"
@@ -84,6 +78,7 @@ EOF
 
 # ------------------------------------------------------------------------------
 # Rewrite function prefix splng_ → based on slug
+# Also normalize PHP docblocks: set `@package <slug>` across the theme.
 # ------------------------------------------------------------------------------
 do_prefix() {
   echo "[child] Rewriting function prefix splng_ → based on slug '${SLUG}'…"
@@ -96,12 +91,20 @@ do_prefix() {
   fi
 
   export NEW_PREFIX="$prefix"
-  # Replace only token-start "splng_" (word boundary) in PHP files, skip vendor/node_modules/dist
+  # Replace only token-start "splng_" in PHP files; skip vendor/node_modules/dist
   find "$theme_dir" -type f -name "*.php" \
     -not -path "*/vendor/*" -not -path "*/node_modules/*" -not -path "*/dist/*" -print0 \
     | xargs -0 perl -0777 -i -pe 's/\bsplng_/$ENV{NEW_PREFIX}/g'
 
   echo "[child] Prefix rewrite complete → ${NEW_PREFIX}"
+
+  # --- Docblock @package normalization ---
+  # Set @package to the raw slug (as requested).
+  echo "[child] Normalizing PHP docblocks: @package → ${SLUG}"
+  export NEW_PACKAGE="$SLUG"
+  find "$theme_dir" -type f -name "*.php" \
+    -not -path "*/vendor/*" -not -path "*/node_modules/*" -not -path "*/dist/*" -print0 \
+    | xargs -0 perl -0777 -i -pe 's@(^\s*\*\s*@package\s+)[^\r\n]+@$1$ENV{NEW_PACKAGE}@mg'
 }
 
 # ------------------------------------------------------------------------------
