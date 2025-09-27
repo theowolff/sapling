@@ -31,17 +31,27 @@ cat > .gitignore <<EOF
 /scripts/*
 !/scripts/sync.sh
 
-# Re-allow wp-content + themes directory (directories only)
+# Re-allow wp-content + themes directory
 !/wp-content/
 !/wp-content/themes/
 
-# Include ONLY the child theme (everything inside it)
+# Include ONLY the child theme
 !/wp-content/themes/${SLUG}/
 !/wp-content/themes/${SLUG}/**
-/wp-content/themes/${SLUG}/node_modules/ # Ignore child node_modules if present
-/wp-content/themes/${SLUG}/dist/         # Ignore child dist if present
 
-# Force-ignore everything else under wp-content
+# Re-ignore build/vendor folders inside the child
+# Node, build outputs, caches, envs
+/wp-content/themes/${SLUG}/node_modules/**
+/wp-content/themes/${SLUG}/dist/**
+/wp-content/themes/${SLUG}/.cache/**
+/wp-content/themes/${SLUG}/.sass-cache/**
+/wp-content/themes/${SLUG}/.parcel-cache/**
+/wp-content/themes/${SLUG}/.next/**
+/wp-content/themes/${SLUG}/.nuxt/**
+/wp-content/themes/${SLUG}/.env
+/wp-content/themes/${SLUG}/.env.*
+
+# Force-ignore everything else under wp-content we don't want
 /wp-content/plugins/
 /wp-content/themes/twwp-theme/
 /wp-content/uploads/
