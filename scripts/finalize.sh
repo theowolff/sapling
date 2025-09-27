@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+# Read env (no writes)
+if [ -f ".env" ]; then
+  set -a; set +u; . ./.env; set -u; set +a
+fi
+
+SLUG="${CHILD_THEME_SLUG:-}"
+REMOTE_URL="${GIT_REMOTE_URL:-}"
+
+[ -n "${SLUG}" ] || { echo "[finalize] ERROR: CHILD_THEME_SLUG not set in .env"; exit 1; }
+[ -d "wp-content/themes/${SLUG}" ] || { echo "[finalize] ERROR: child theme folder wp-content/themes/${SLUG} not found"; exit 1; }
+
+# 1) Write .gitignore (track only child + sync script)
+cat > .gitignore <<EOF
+# Ignore everything at repo root
+/*
+
+# Keep these root files
+!/.gitignore
+!/project-sync.sh
+
+# Re-allow wp-content + themes directory (directories only)
+!/wp-content/
+!/wp-content/themes/
+
+# Include ONLY the child theme (everything inside it)
+!/wp-content/themes/${SLUG}/
+!/wp-content/themes/${SLUG}/**
+
+# Force-ignore everything else under wp-content
+/wp-content/plugins/
+/wp-content/themes/twwp-theme/
+/wp-content/uploads/
+/wp-content/mu-plugins/
+/wp-content/cache/
+/wp-content/upgrade/
+/wp-content/languages/
+EOF
+echo "[finalize] Wrote .gitignore"
+
+# 2) Install project-sync.sh (rehydrates core + parent, links child) — no env writes
+cat > project-sync.sh <<'EOSH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+CORE_REPO="${CORE_REPO:-https://github.com/theowolff/twwp-infra.git}"
+PARENT_REPO="${PARENT_REPO:-https://github.com/theowolff/twwp-theme.git}"
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+CORE_DIR="$ROOT/core"
+
+# Load env to read CHILD_THEME_SLUG (user must provide .env manually)
+if [ -f "$CORE_DIR/.env" ]; then
+  set -a; set +u; . "$CORE_DIR/.env"; set -u; set +a
+elif [ -f "$ROOT/.env" ]; then
+  set -a; set +u; . "$ROOT/.env"; set -u; set +a
+fi
+SLUG="${CHILD_THEME_SLUG:-}"
+[ -n "$SLUG" ] || { echo "[sync] CHILD_THEME_SLUG not set. Create ./core/.env or ./.env and retry."; exit 1; }
+
+# 1) clone/update core
+if [ ! -d "$CORE_DIR/.git" ]; then
+  echo "[sync] Cloning core → $CORE_DIR"
+  git clone "$CORE_REPO" "$CORE_DIR"
+else
+  echo "[sync] Updating core"
+  (cd "$CORE_DIR" && git pull --ff-only || true)
+fi
+
+# 2) clone/update parent
+mkdir -p "$CORE_DIR/wp-content/themes"
+if [ ! -d "$CORE_DIR/wp-content/themes/twwp-theme/.git" ]; then
+  echo "[sync] Cloning parent theme"
+  git clone "$PARENT_REPO" "$CORE_DIR/wp-content/themes/twwp-theme"
+else
+  echo "[sync] Updating parent theme"
+  (cd "$CORE_DIR/wp-content/themes/twwp-theme" && git pull --ff-only || true)
+fi
+
+# 3) link child (from this repo) into core
+if [ ! -d "$ROOT/wp-content/themes/$SLUG" ]; then
+  echo "[sync] ERROR: child theme not found at wp-content/themes/$SLUG"; exit 1
+fi
+rm -rf "$CORE_DIR/wp-content/themes/$SLUG" 2>/dev/null || true
+ln -s "$ROOT/wp-content/themes/$SLUG" "$CORE_DIR/wp-content/themes/$SLUG"
+echo "[sync] Linked child → core/wp-content/themes/$SLUG"
+
+# 4) start & build (no config changes)
+cd "$CORE_DIR"
+DC="docker compose"; $DC version >/dev/null 2>&1 || DC="docker-compose"
+
+$DC up -d --build
+$DC exec php composer install
+$DC exec php bash -lc 'set -e; cd wp-content/themes/twwp-theme; ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev' || true
+$DC exec php bash -lc "set -e; cd wp-content/themes/$SLUG; ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev" || true
+
+./scripts/generate-salts.sh
+./scripts/wp-admin.sh
+./scripts/activate-child.sh
+
+echo
+echo "✅ Sync complete."
+EOSH
+chmod +x project-sync.sh
+echo "[finalize] Installed project-sync.sh"
+
+# 3) Remove nested repos (parent + child)
+[ -d "wp-content/themes/twwp-theme/.git" ] && rm -rf "wp-content/themes/twwp-theme/.git"
+[ -d "wp-content/themes/${SLUG}/.git" ] && rm -rf "wp-content/themes/${SLUG}/.git"
+
+# 4) Remove root git (wipe history)
+[ -d ".git" ] && rm -rf .git
+
+# 5) Re-init new repo & push
+git init
+git branch -M main
+git add -A
+git commit -m "Initial commit (client child theme + sync script)"
+
+if [ -n "$REMOTE_URL" ]; then
+  git remote add origin "$REMOTE_URL" || git remote set-url origin "$REMOTE_URL"
+  # create upstream
+  git push -u origin main
+  echo "[finalize] Pushed to $REMOTE_URL (branch: main)"
+else
+  echo "[finalize] No GIT_REMOTE_URL in .env — skipped adding/pushing remote."
+fi
+
+echo "[finalize] Done."

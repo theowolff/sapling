@@ -61,3 +61,11 @@ $DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc "set -e; cd wp-c
 DEFAULT_HOME="http://${SLUG}.localhost:8080"
 echo -e "\nOpen WordPress: ${WP_HOME:-$DEFAULT_HOME}"
 echo "Adminer:        http://localhost:8081"
+
+# Auto-finalize: write .gitignore + project-sync.sh (no env changes). Set SKIP_FINALIZE=1 to skip.
+if [ "${SKIP_FINALIZE:-0}" != "1" ]; then
+  echo "[setup] Finalizing repo layout (child-only tracking + sync script)"
+  ./scripts/finalize.sh || true
+else
+  echo "[setup] Skipped finalization (SKIP_FINALIZE=1)"
+fi
