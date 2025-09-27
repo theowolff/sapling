@@ -15,7 +15,7 @@ REMOTE_URL="${GIT_REMOTE_URL:-}"
 [ -n "${SLUG}" ] || { echo "[finalize] ERROR: CHILD_THEME_SLUG not set in .env"; exit 1; }
 [ -d "wp-content/themes/${SLUG}" ] || { echo "[finalize] ERROR: child theme folder wp-content/themes/${SLUG} not found"; exit 1; }
 
-# 1) Write .gitignore (track only child + sync script)
+# 1) Write .gitignore (strict: track only child + project-sync.sh)
 cat > .gitignore <<EOF
 # Ignore everything at repo root
 /*
@@ -97,7 +97,14 @@ DC="docker compose"; $DC version >/dev/null 2>&1 || DC="docker-compose"
 $DC up -d --build
 $DC exec php composer install
 $DC exec php bash -lc 'set -e; cd wp-content/themes/twwp-theme; ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev' || true
-$DC exec php bash -lc "set -e; cd wp-content/themes/$SLUG; ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev" || true
+
+# Child build inside container ONLY if we are not using host node for the child
+$DC exec php bash -lc "set -e; cd wp-content/themes/$SLUG; \
+  if [ -f .use_host_node ]; then \
+    echo '[sync] .use_host_node present — skipping container npm/gulp for child'; \
+  else \
+    ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \
+  fi" || true
 
 ./scripts/generate-salts.sh
 ./scripts/wp-admin.sh
@@ -124,7 +131,6 @@ git commit -m "Initial commit (client child theme + sync script)"
 
 if [ -n "$REMOTE_URL" ]; then
   git remote add origin "$REMOTE_URL" || git remote set-url origin "$REMOTE_URL"
-  # create upstream
   git push -u origin main
   echo "[finalize] Pushed to $REMOTE_URL (branch: main)"
 else

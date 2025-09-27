@@ -14,6 +14,10 @@ load_env() {
 }
 load_env
 
+# summary file (repo root)
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SUMMARY="$ROOT/.setup_summary.txt"
+
 WP_PATH="/var/www/html/wp"
 SITE_URL="${WP_HOME:-http://localhost:8080}"
 ADMIN_USER="${ADMIN_USER:-admin}"
@@ -58,7 +62,7 @@ else
   $DC exec php wp --allow-root core install \
     --path="$WP_PATH" \
     --url="$SITE_URL" \
-    --title="twwp site" \
+    --title="${CHILD_THEME_NAME:-twwp site}" \
     --admin_user="$ADMIN_USER" \
     --admin_password="$PASS" \
     --admin_email="$ADMIN_EMAIL"
@@ -68,6 +72,11 @@ fi
 $DC exec php wp --allow-root user update "$ADMIN_USER" --user_pass="$PASS" --path="$WP_PATH" >/dev/null || \
 $DC exec php wp --allow-root user create "$ADMIN_USER" "$ADMIN_EMAIL" --role=administrator --user_pass="$PASS" --path="$WP_PATH" >/dev/null
 
-echo "Admin: $ADMIN_USER"
-echo "Pass:  $PASS"
-echo "Login: ${SITE_URL}/wp/wp-login.php"
+# write summary (don’t print now — setup.sh will print after finalize)
+{
+  echo "Admin: $ADMIN_USER"
+  echo "Pass:  $PASS"
+  echo "Login: ${SITE_URL}/wp/wp-login.php"
+} >> "$SUMMARY"
+
+echo "[wp-admin] Credentials captured for summary."
