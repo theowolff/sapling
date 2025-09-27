@@ -15,13 +15,15 @@ REMOTE_URL="${GIT_REMOTE_URL:-}"
 [ -n "${SLUG}" ] || { echo "[finalize] ERROR: CHILD_THEME_SLUG not set in .env"; exit 1; }
 [ -d "wp-content/themes/${SLUG}" ] || { echo "[finalize] ERROR: child theme folder wp-content/themes/${SLUG} not found"; exit 1; }
 
-# 1) Write .gitignore (strict: track only child + project-sync.sh)
+# 1) Write .gitignore (strict: track only child + composer + sync.sh)
 cat > .gitignore <<EOF
 # Ignore everything at repo root
 /*
 
 # Keep these root files
 !/.gitignore
+!/composer.json
+!/composer.lock
 
 # Keep only scripts/sync.sh (ignore any other scripts)
 !/scripts/
@@ -45,6 +47,9 @@ cat > .gitignore <<EOF
 /wp-content/cache/
 /wp-content/upgrade/
 /wp-content/languages/
+
+# Composer vendor should not be tracked
+/vendor/
 EOF
 echo "[finalize] Wrote .gitignore"
 
