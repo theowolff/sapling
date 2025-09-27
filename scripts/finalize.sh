@@ -135,7 +135,7 @@ $DC exec php bash -lc "set -e; cd wp-content/themes/$SLUG; \
 echo
 echo "✅ Sync complete."
 EOSH
-chmod +x sync.sh
+chmod +x scripts/sync.sh
 echo "[finalize] Installed sync.sh"
 
 # 3) Remove nested repos (parent + child)
