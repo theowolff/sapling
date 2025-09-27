@@ -1,4 +1,3 @@
-
 <?php
     /**
      * Environment configuration for staging.

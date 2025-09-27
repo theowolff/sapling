@@ -1,4 +1,3 @@
-
 <?php
     /**
      * Main entry point for WordPress theme bootstrap.

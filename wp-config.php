@@ -1,4 +1,3 @@
-
 <?php
     /**
      * Main WordPress configuration file for Sapling local dev.
