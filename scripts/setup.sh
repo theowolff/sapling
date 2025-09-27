@@ -6,7 +6,9 @@ DC="docker compose"; $DC version >/dev/null 2>&1 || DC="docker-compose"
 load_env() {
   if [ -f ".env" ]; then
     set -a
+    set +u
     . ./.env
+    set -u
     set +a
   fi
 }
@@ -39,13 +41,17 @@ cd ../../
 $DC up -d --build
 $DC exec php composer install
 
+# Helper for npm install (ci if lock exists, else i) — single line, safe to pass via env
+npm_install_block='if [ -f package-lock.json ]; then npm ci; else npm i; npm i --package-lock-only >/dev/null 2>&1 || true; fi'
+
 # Build parent (dev)
-$DC exec php bash -lc "cd wp-content/themes/twwp-theme && ([ -f package-lock.json ] && npm ci || npm i) && npx gulp dev" || true
+$DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc 'set -e; cd wp-content/themes/twwp-theme; eval "$NPM_INSTALL_BLOCK"; npx gulp dev' || true
 
 # Patch child identity, then install and build child
 ./scripts/patch-child.sh
 SLUG="${CHILD_THEME_SLUG:-twwp-child}"
-$DC exec php bash -lc "cd wp-content/themes/${SLUG} && ([ -f package-lock.json ] && npm ci || npm i) && npx gulp dev" || true
+
+$DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc "set -e; cd wp-content/themes/${SLUG}; eval \"\$NPM_INSTALL_BLOCK\"; npx gulp dev" || true
 
 # Install WP + admin, then activate child
 ./scripts/generate-salts.sh
