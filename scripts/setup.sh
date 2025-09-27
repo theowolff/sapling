@@ -93,7 +93,7 @@ DEFAULT_HOME="http://${SLUG}.localhost:8080"
   echo "Adminer:        http://localhost:8081"
 } >> "$SUMMARY"
 
-# Auto-finalize: write .gitignore + project-sync.sh (no env changes). Set SKIP_FINALIZE=1 to skip.
+# Auto-finalize: write .gitignore + sync.sh (no env changes). Set SKIP_FINALIZE=1 to skip.
 if [ "${SKIP_FINALIZE:-0}" != "1" ]; then
   echo "[setup] Finalizing repo layout (child-only tracking + sync script)"
   ./scripts/finalize.sh || true

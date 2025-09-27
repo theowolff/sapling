@@ -66,7 +66,7 @@ EOF
 echo "[finalize] Wrote .gitignore"
 
 # 2) Install sync.sh (rehydrates core + parent, links child) — no env writes
-cat > sync.sh <<'EOSH'
+cat > scripts/sync.sh <<'EOSH'
 #!/usr/bin/env bash
 set -euo pipefail
 
