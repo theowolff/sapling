@@ -33,6 +33,7 @@ REMOTE_URL="${GIT_REMOTE_URL:-}"
 cat > .gitignore <<EOF
 # Ignore everything at repo root
 /*
+.DS_Store
 
 # Keep these root files
 !/.gitignore
@@ -176,7 +177,7 @@ git commit -m "Initial commit (client child theme + sync script)"
 
 if [ -n "$REMOTE_URL" ]; then
   git remote add origin "$REMOTE_URL" || git remote set-url origin "$REMOTE_URL"
-  git push -u origin main
+  git push --set-upstream origin main
   echo "[finalize] Pushed to $REMOTE_URL (branch: main)"
 else
   echo "[finalize] No GIT_REMOTE_URL in .env — skipped adding/pushing remote."
