@@ -3,6 +3,7 @@
 # salts.sh - Fetch and inject fresh WordPress salts into wp-config.php
 #
 # @package sapling
+# @author theowolff
 # ------------------------------------------------------------------------------
 set -euo pipefail
 
