@@ -25,6 +25,12 @@
     $table_prefix = $_ENV['TABLE_PREFIX'] ?? 'wp_';
 
     /**
+     * Default charset / collation
+     */
+    define('DB_CHARSET', 'utf8mb4');
+    define('DB_COLLATE', 'utf8mb4_unicode_ci');
+
+    /**
      * Theme slug and default URL
      */
     $slug = $_ENV['CHILD_THEME_SLUG'] ?? 'sapling-child';
