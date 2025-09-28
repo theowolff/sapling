@@ -73,6 +73,7 @@ cat > .gitignore <<EOF
 /wp-content/cache/
 /wp-content/upgrade/
 /wp-content/languages/
+/wp-content/debug.log
 
 # Composer vendor should not be tracked
 /vendor/
