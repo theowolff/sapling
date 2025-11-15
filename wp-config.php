@@ -18,6 +18,8 @@
     /**
      * MySQL and database settings
      */
+    define('DB_CHARSET', $_ENV['DB_CHARSET'] ?? 'utf8mb4');
+    define('DB_COLLATE', $_ENV['DB_COLLATE'] ?? '');
     define('DB_NAME', $_ENV['DB_NAME'] ?? 'wordpress');
     define('DB_USER', $_ENV['DB_USER'] ?? 'root');
     define('DB_PASSWORD', $_ENV['DB_PASSWORD'] ?? '');
