@@ -9,11 +9,7 @@ services:
     depends_on:
       - db
   db:
-    image: mysql:8
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --skip-character-set-client-handshake
+    image: mariadb:11
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
