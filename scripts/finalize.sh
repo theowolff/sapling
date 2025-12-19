@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
 # finalize.sh - Finalize and prepare child theme repo for client delivery
@@ -23,9 +22,26 @@ fi
 
 SLUG="${CHILD_THEME_SLUG:-}"
 REMOTE_URL="${GIT_REMOTE_URL:-}"
+IS_HEADLESS="${IS_HEADLESS:-}"
+
+# Determine mode
+if [ "$IS_HEADLESS" = "true" ] || [ "$IS_HEADLESS" = "1" ]; then
+  MODE="headless"
+  PARENT_DIR="stump-theme"
+  DEFAULT_CORE_REPO="https://github.com/theowolff/sapling-infra.git"
+  DEFAULT_PARENT_REPO="https://github.com/theowolff/stump-theme.git"
+else
+  MODE="traditional"
+  PARENT_DIR="sapling-theme"
+  DEFAULT_CORE_REPO="https://github.com/theowolff/sapling-infra.git"
+  DEFAULT_PARENT_REPO="https://github.com/theowolff/sapling-theme.git"
+fi
 
 [ -n "${SLUG}" ] || { echo "[finalize] ERROR: CHILD_THEME_SLUG not set in .env"; exit 1; }
 [ -d "wp-content/themes/${SLUG}" ] || { echo "[finalize] ERROR: child theme folder wp-content/themes/${SLUG} not found"; exit 1; }
+
+echo "[finalize] Mode: ${MODE}"
+echo "[finalize] Parent theme: ${PARENT_DIR}"
 
 # ------------------------------------------------------------------------------
 # 1) Write .gitignore (strict: track only child + composer + sync.sh)
@@ -68,7 +84,7 @@ cat > .gitignore <<EOF
 
 # Force-ignore everything else under wp-content we don't want
 /wp-content/plugins/
-/wp-content/themes/sapling-theme/
+/wp-content/themes/${PARENT_DIR}/
 /wp-content/uploads/
 /wp-content/mu-plugins/
 /wp-content/cache/
@@ -84,67 +100,77 @@ echo "[finalize] Wrote .gitignore"
 # ------------------------------------------------------------------------------
 # 2) Install sync.sh (rehydrates core + parent, links child) — no env writes
 # ------------------------------------------------------------------------------
-cat > scripts/sync.sh <<'EOSH'
+cat > scripts/sync.sh <<EOSH
 #!/usr/bin/env bash
 set -euo pipefail
 
-CORE_REPO="${CORE_REPO:-https://github.com/theowolff/sapling-infra.git}"
-PARENT_REPO="${PARENT_REPO:-https://github.com/theowolff/sapling-theme.git}"
+CORE_REPO="\${CORE_REPO:-${DEFAULT_CORE_REPO}}"
+PARENT_REPO="\${PARENT_REPO:-${DEFAULT_PARENT_REPO}}"
+PARENT_DIR="${PARENT_DIR}"
+MODE="${MODE}"
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
-CORE_DIR="$ROOT/core"
+ROOT="\$(cd "\$(dirname "\$0")" && pwd)"
+CORE_DIR="\$ROOT/core"
 
 # Load env to read CHILD_THEME_SLUG (user must provide .env manually)
-if [ -f "$CORE_DIR/.env" ]; then
-  set -a; set +u; . "$CORE_DIR/.env"; set -u; set +a
-elif [ -f "$ROOT/.env" ]; then
-  set -a; set +u; . "$ROOT/.env"; set -u; set +a
+if [ -f "\$CORE_DIR/.env" ]; then
+  set -a; set +u; . "\$CORE_DIR/.env"; set -u; set +a
+elif [ -f "\$ROOT/.env" ]; then
+  set -a; set +u; . "\$ROOT/.env"; set -u; set +a
 fi
-SLUG="${CHILD_THEME_SLUG:-}"
-[ -n "$SLUG" ] || { echo "[sync] CHILD_THEME_SLUG not set. Create ./core/.env or ./.env and retry."; exit 1; }
+SLUG="\${CHILD_THEME_SLUG:-}"
+[ -n "\$SLUG" ] || { echo "[sync] CHILD_THEME_SLUG not set. Create ./core/.env or ./.env and retry."; exit 1; }
+
+echo "[sync] Mode: \${MODE}"
 
 # 1) clone/update core
-if [ ! -d "$CORE_DIR/.git" ]; then
-  echo "[sync] Cloning core → $CORE_DIR"
-  git clone "$CORE_REPO" "$CORE_DIR"
+if [ ! -d "\$CORE_DIR/.git" ]; then
+  echo "[sync] Cloning core → \$CORE_DIR"
+  git clone "\$CORE_REPO" "\$CORE_DIR"
 else
   echo "[sync] Updating core"
-  (cd "$CORE_DIR" && git pull --ff-only || true)
+  (cd "\$CORE_DIR" && git pull --ff-only || true)
 fi
 
 # 2) clone/update parent
-mkdir -p "$CORE_DIR/wp-content/themes"
-if [ ! -d "$CORE_DIR/wp-content/themes/sapling-theme/.git" ]; then
-  echo "[sync] Cloning parent theme"
-  git clone "$PARENT_REPO" "$CORE_DIR/wp-content/themes/sapling-theme"
+mkdir -p "\$CORE_DIR/wp-content/themes"
+if [ ! -d "\$CORE_DIR/wp-content/themes/\${PARENT_DIR}/.git" ]; then
+  echo "[sync] Cloning parent theme: \${PARENT_DIR}"
+  git clone "\$PARENT_REPO" "\$CORE_DIR/wp-content/themes/\${PARENT_DIR}"
 else
-  echo "[sync] Updating parent theme"
-  (cd "$CORE_DIR/wp-content/themes/sapling-theme" && git pull --ff-only || true)
+  echo "[sync] Updating parent theme: \${PARENT_DIR}"
+  (cd "\$CORE_DIR/wp-content/themes/\${PARENT_DIR}" && git pull --ff-only || true)
 fi
 
 # 3) link child (from this repo) into core
-if [ ! -d "$ROOT/wp-content/themes/$SLUG" ]; then
-  echo "[sync] ERROR: child theme not found at wp-content/themes/$SLUG"; exit 1
+if [ ! -d "\$ROOT/wp-content/themes/\$SLUG" ]; then
+  echo "[sync] ERROR: child theme not found at wp-content/themes/\$SLUG"; exit 1
 fi
-rm -rf "$CORE_DIR/wp-content/themes/$SLUG" 2>/dev/null || true
-ln -s "$ROOT/wp-content/themes/$SLUG" "$CORE_DIR/wp-content/themes/$SLUG"
-echo "[sync] Linked child → core/wp-content/themes/$SLUG"
+rm -rf "\$CORE_DIR/wp-content/themes/\$SLUG" 2>/dev/null || true
+ln -s "\$ROOT/wp-content/themes/\$SLUG" "\$CORE_DIR/wp-content/themes/\$SLUG"
+echo "[sync] Linked child → core/wp-content/themes/\$SLUG"
 
 # 4) start & build (no config changes)
-cd "$CORE_DIR"
-DC="docker compose"; $DC version >/dev/null 2>&1 || DC="docker-compose"
+cd "\$CORE_DIR"
+DC="docker compose"; \$DC version >/dev/null 2>&1 || DC="docker-compose"
 
-$DC up -d --build
-$DC exec php composer install
-$DC exec php bash -lc 'set -e; cd wp-content/themes/sapling-theme; ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev' || true
+\$DC up -d --build
+\$DC exec php composer install
 
-# Child build inside container ONLY if we are not using host node for the child
-$DC exec php bash -lc "set -e; cd wp-content/themes/$SLUG; \
-  if [ -f .use_host_node ]; then \
-    echo '[sync] .use_host_node present — skipping container npm/gulp for child'; \
-  else \
-    ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \
-  fi" || true
+# Build parent only if traditional mode
+if [ "\$MODE" = "traditional" ]; then
+  \$DC exec php bash -lc "set -e; cd wp-content/themes/\${PARENT_DIR}; ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev" || true
+
+  # Child build inside container ONLY if we are not using host node for the child
+  \$DC exec php bash -lc "set -e; cd wp-content/themes/\$SLUG; \\
+    if [ -f .use_host_node ]; then \\
+      echo '[sync] .use_host_node present — skipping container npm/gulp for child'; \\
+    else \\
+      ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \\
+    fi" || true
+else
+  echo "[sync] Headless mode: skipping asset builds"
+fi
 
 ./scripts/salts.sh
 ./scripts/admin.sh
@@ -152,6 +178,13 @@ $DC exec php bash -lc "set -e; cd wp-content/themes/$SLUG; \
 
 echo
 echo "✅ Sync complete."
+if [ "\$MODE" = "headless" ]; then
+  echo ""
+  echo "API Endpoints available at:"
+  echo "  /wp-json/stump/v1/health"
+  echo "  /wp-json/stump/v1/auth/login"
+  echo "  /wp-json/stump/v1/menus"
+fi
 EOSH
 chmod +x scripts/sync.sh
 echo "[finalize] Installed sync.sh"
@@ -159,7 +192,7 @@ echo "[finalize] Installed sync.sh"
 # ------------------------------------------------------------------------------
 # 3) Remove nested repos (parent + child)
 # ------------------------------------------------------------------------------
-[ -d "wp-content/themes/sapling-theme/.git" ] && rm -rf "wp-content/themes/sapling-theme/.git"
+[ -d "wp-content/themes/${PARENT_DIR}/.git" ] && rm -rf "wp-content/themes/${PARENT_DIR}/.git"
 [ -d "wp-content/themes/${SLUG}/.git" ] && rm -rf "wp-content/themes/${SLUG}/.git"
 
 # ------------------------------------------------------------------------------

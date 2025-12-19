@@ -1,7 +1,6 @@
-
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# setup.sh - One-step local dev setup for Sapling child theme
+# setup.sh - One-step local dev setup for Sapling/Stump child theme
 #
 # @package sapling
 # @author theowolff
@@ -30,6 +29,35 @@ load_env() {
 load_env
 
 # ------------------------------------------------------------------------------
+# Determine mode (headless vs traditional)
+# ------------------------------------------------------------------------------
+IS_HEADLESS="${IS_HEADLESS:-}"
+if [ "$IS_HEADLESS" = "true" ] || [ "$IS_HEADLESS" = "1" ]; then
+  MODE="headless"
+  PARENT_DIR="stump-theme"
+  CHILD_REPO_DIR="stump-theme-child"
+  DEFAULT_THEME_REPO="https://github.com/theowolff/stump-theme.git"
+  DEFAULT_CHILD_REPO="https://github.com/theowolff/stump-theme-child.git"
+  DEFAULT_PREFIX="stmp"
+  echo "[setup] Mode: HEADLESS (Stump)"
+else
+  MODE="traditional"
+  PARENT_DIR="sapling-theme"
+  CHILD_REPO_DIR="sapling-theme-child"
+  DEFAULT_THEME_REPO="https://github.com/theowolff/sapling-theme.git"
+  DEFAULT_CHILD_REPO="https://github.com/theowolff/sapling-theme-child.git"
+  DEFAULT_PREFIX="splng"
+  echo "[setup] Mode: TRADITIONAL (Sapling)"
+fi
+
+# Use env overrides or defaults
+THEME_REPO="${THEME_REPO:-$DEFAULT_THEME_REPO}"
+CHILD_REPO="${CHILD_REPO:-$DEFAULT_CHILD_REPO}"
+
+# Export for child scripts
+export IS_HEADLESS MODE PARENT_DIR CHILD_REPO_DIR DEFAULT_PREFIX
+
+# ------------------------------------------------------------------------------
 # Setup summary file (repo root) — truncate
 # ------------------------------------------------------------------------------
 SUMMARY="$(pwd)/.setup_summary.txt"
@@ -42,19 +70,23 @@ mkdir -p wp-content/themes
 cd wp-content/themes
 
 # Clone/update parent
-if [ -z "${THEME_REPO:-}" ]; then echo "ERROR: THEME_REPO not set in .env"; exit 1; fi
-if [ ! -d "sapling-theme/.git" ]; then
-  git clone "$THEME_REPO" sapling-theme
+if [ -z "${THEME_REPO:-}" ]; then echo "ERROR: THEME_REPO not set"; exit 1; fi
+if [ ! -d "${PARENT_DIR}/.git" ]; then
+  echo "[setup] Cloning parent theme: ${PARENT_DIR}"
+  git clone "$THEME_REPO" "$PARENT_DIR"
 else
-  (cd sapling-theme && git pull --ff-only)
+  echo "[setup] Updating parent theme: ${PARENT_DIR}"
+  (cd "$PARENT_DIR" && git pull --ff-only)
 fi
 
 # Clone/update child template repo (will be renamed/patched)
-if [ -z "${CHILD_REPO:-}" ]; then echo "ERROR: CHILD_REPO not set in .env"; exit 1; fi
-if [ ! -d "sapling-theme-child/.git" ]; then
-  git clone "$CHILD_REPO" sapling-theme-child
+if [ -z "${CHILD_REPO:-}" ]; then echo "ERROR: CHILD_REPO not set"; exit 1; fi
+if [ ! -d "${CHILD_REPO_DIR}/.git" ]; then
+  echo "[setup] Cloning child theme template: ${CHILD_REPO_DIR}"
+  git clone "$CHILD_REPO" "$CHILD_REPO_DIR"
 else
-  (cd sapling-theme-child && git pull --ff-only)
+  echo "[setup] Updating child theme template: ${CHILD_REPO_DIR}"
+  (cd "$CHILD_REPO_DIR" && git pull --ff-only)
 fi
 
 cd ../../
@@ -71,9 +103,14 @@ $DC exec php composer install
 npm_install_block='if [ -f package-lock.json ]; then npm ci; else npm i; npm i --package-lock-only >/dev/null 2>&1 || true; fi'
 
 # ------------------------------------------------------------------------------
-# Build parent (dev) INSIDE container (Linux)
+# Build parent (dev) INSIDE container (Linux) - only for traditional mode
+# Headless (Stump) has no frontend assets to build
 # ------------------------------------------------------------------------------
-$DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc 'set -e; cd wp-content/themes/sapling-theme; eval "$NPM_INSTALL_BLOCK"; npx gulp dev' || true
+if [ "$MODE" = "traditional" ]; then
+  $DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc "set -e; cd wp-content/themes/${PARENT_DIR}; eval \"\$NPM_INSTALL_BLOCK\"; npx gulp dev" || true
+else
+  echo "[setup] Headless mode: skipping parent theme asset build"
+fi
 
 # ------------------------------------------------------------------------------
 # Patch child identity, then rewrite prefixes based on slug
@@ -84,33 +121,35 @@ $DC exec -e NPM_INSTALL_BLOCK="$npm_install_block" php bash -lc 'set -e; cd wp-c
 SLUG="${CHILD_THEME_SLUG:-sapling-child}"
 
 # ------------------------------------------------------------------------------
-# Build child ON HOST (avoid esbuild mismatch)
+# Build child ON HOST (avoid esbuild mismatch) - only for traditional mode
 # ------------------------------------------------------------------------------
-echo "[setup] Installing child theme deps on HOST (wp-content/themes/${SLUG})..."
-if [ -d "wp-content/themes/${SLUG}" ]; then
-  pushd "wp-content/themes/${SLUG}" >/dev/null
-  if [ -f package-lock.json ]; then
-    npm ci || npm i
+if [ "$MODE" = "traditional" ]; then
+  echo "[setup] Installing child theme deps on HOST (wp-content/themes/${SLUG})..."
+  if [ -d "wp-content/themes/${SLUG}" ]; then
+    pushd "wp-content/themes/${SLUG}" >/dev/null
+    if [ -f package-lock.json ]; then
+      npm ci || npm i
+    else
+      npm i
+      npm i --package-lock-only >/dev/null 2>&1 || true
+    fi
+    npx gulp dev || true
+    touch .use_host_node
+    popd >/dev/null
   else
-    npm i
-    npm i --package-lock-only >/dev/null 2>&1 || true
+    echo "[setup] ERROR: child theme folder wp-content/themes/${SLUG} not found"
   fi
-  npx gulp dev || true
-  touch .use_host_node
-  popd >/dev/null
-else
-  echo "[setup] ERROR: child theme folder wp-content/themes/${SLUG} not found"
-fi
 
-# ------------------------------------------------------------------------------
-# Guard container-side child build if marker exists
-# ------------------------------------------------------------------------------
-$DC exec php bash -lc "set -e; cd wp-content/themes/${SLUG}; \
-  if [ -f .use_host_node ]; then \
-    echo '[setup] .use_host_node present — skipping container npm/gulp for child'; \
-  else \
-    ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \
-  fi" || true
+  # Guard container-side child build if marker exists
+  $DC exec php bash -lc "set -e; cd wp-content/themes/${SLUG}; \
+    if [ -f .use_host_node ]; then \
+      echo '[setup] .use_host_node present — skipping container npm/gulp for child'; \
+    else \
+      ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \
+    fi" || true
+else
+  echo "[setup] Headless mode: skipping child theme asset build"
+fi
 
 # ------------------------------------------------------------------------------
 # Install WP + admin, then activate child (admin writes creds to SUMMARY)
@@ -122,8 +161,17 @@ $DC exec php bash -lc "set -e; cd wp-content/themes/${SLUG}; \
 DEFAULT_HOME="http://${SLUG}.localhost:8080"
 {
   echo ""
+  echo "Mode: ${MODE^^}"
   echo "Open WordPress: ${WP_HOME:-$DEFAULT_HOME}"
   echo "Adminer:        http://localhost:8081"
+  if [ "$MODE" = "headless" ]; then
+    echo ""
+    echo "API Endpoints:"
+    echo "  Health:  ${WP_HOME:-$DEFAULT_HOME}/wp-json/stump/v1/health"
+    echo "  Login:   ${WP_HOME:-$DEFAULT_HOME}/wp-json/stump/v1/auth/login"
+    echo "  Menus:   ${WP_HOME:-$DEFAULT_HOME}/wp-json/stump/v1/menus"
+    echo "  Settings: ${WP_HOME:-$DEFAULT_HOME}/wp-json/stump/v1/settings"
+  fi
 } >> "$SUMMARY"
 
 # ------------------------------------------------------------------------------

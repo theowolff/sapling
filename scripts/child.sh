@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# child.sh - Child theme setup and activation for Sapling local dev
+# child.sh - Child theme setup and activation for Sapling/Stump local dev
 #
 # @package sapling
 # @author theowolff
@@ -22,11 +22,24 @@ load_env() {
 }
 load_env
 
+# ------------------------------------------------------------------------------
+# Determine mode (headless vs traditional)
+# ------------------------------------------------------------------------------
+IS_HEADLESS="${IS_HEADLESS:-}"
+if [ "$IS_HEADLESS" = "true" ] || [ "$IS_HEADLESS" = "1" ]; then
+  MODE="headless"
+  PARENT_DIR="${PARENT_DIR:-stump-theme}"
+  CHILD_REPO_DIR="${CHILD_REPO_DIR:-stump-theme-child}"
+  OLD_PREFIX="stmp_"
+else
+  MODE="traditional"
+  PARENT_DIR="${PARENT_DIR:-sapling-theme}"
+  CHILD_REPO_DIR="${CHILD_REPO_DIR:-sapling-theme-child}"
+  OLD_PREFIX="splng_"
+fi
+
 # Set up theme paths and inputs
 THEMES_DIR="wp-content/themes"
-PARENT_DIR="${PARENT_DIR:-sapling-theme}"
-CHILD_REPO_DIR="${CHILD_REPO_DIR:-sapling-theme-child}"
-
 SLUG="${CHILD_THEME_SLUG:-sapling-child}"
 NAME="${CHILD_THEME_NAME:-Your Child Theme}"
 
@@ -46,7 +59,7 @@ sanitize_slug_to_prefix() {
 # Patch child theme identity and update style.css header
 # ------------------------------------------------------------------------------
 do_patch() {
-  echo "[child] Patching child theme identity…"
+  echo "[child] Patching child theme identity (mode: ${MODE})…"
 
   if [ -d "${THEMES_DIR}/${CHILD_REPO_DIR}" ] && [ "${CHILD_REPO_DIR}" != "${SLUG}" ]; then
     rm -rf "${THEMES_DIR}/${SLUG}" || true
@@ -75,10 +88,11 @@ EOF
 }
 
 # ------------------------------------------------------------------------------
-# Rewrite function prefix splng_ → based on slug
+# Rewrite function prefix based on slug
+# Sapling uses splng_ prefix, Stump uses stmp_ prefix
 # ------------------------------------------------------------------------------
 do_prefix() {
-  echo "[child] Rewriting function prefix splng_ → based on slug '${SLUG}'…"
+  echo "[child] Rewriting function prefix ${OLD_PREFIX} → based on slug '${SLUG}'…"
   local prefix; prefix="$(sanitize_slug_to_prefix "$SLUG")"
   local theme_dir="${THEMES_DIR}/${SLUG}"
 
@@ -88,9 +102,10 @@ do_prefix() {
   fi
 
   export NEW_PREFIX="$prefix"
+  export OLD_PREFIX="$OLD_PREFIX"
   find "$theme_dir" -type f -name "*.php" \
     -not -path "*/vendor/*" -not -path "*/node_modules/*" -not -path "*/dist/*" -print0 \
-    | xargs -0 perl -0777 -i -pe 's/\bsplng_/$ENV{NEW_PREFIX}/g'
+    | xargs -0 perl -0777 -i -pe 's/\b$ENV{OLD_PREFIX}/$ENV{NEW_PREFIX}/g'
 
   echo "[child] Prefix rewrite complete → ${NEW_PREFIX}"
 }

@@ -1,7 +1,6 @@
-
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# admin.sh - Automated WordPress admin setup for Sapling local dev
+# admin.sh - Automated WordPress admin setup for Sapling/Stump local dev
 #
 # @package sapling
 # @author theowolff
@@ -28,6 +27,14 @@ load_env
 # Set up summary file path (repo root)
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SUMMARY="$ROOT/.setup_summary.txt"
+
+# Determine mode
+IS_HEADLESS="${IS_HEADLESS:-}"
+if [ "$IS_HEADLESS" = "true" ] || [ "$IS_HEADLESS" = "1" ]; then
+  MODE="headless"
+else
+  MODE="traditional"
+fi
 
 # Set WordPress and admin variables
 WP_PATH="/var/www/html/wp"
@@ -92,12 +99,17 @@ $DC exec php wp --allow-root user update "$ADMIN_USER" --user_pass="$PASS" --pat
 $DC exec php wp --allow-root user create "$ADMIN_USER" "$ADMIN_EMAIL" --role=administrator --user_pass="$PASS" --path="$WP_PATH" >/dev/null
 
 # ------------------------------------------------------------------------------
-# Write summary (don’t print now — setup.sh will print after finalize)
+# Write summary (don't print now — setup.sh will print after finalize)
 # ------------------------------------------------------------------------------
 {
   echo "Admin: $ADMIN_USER"
   echo "Pass:  $PASS"
   echo "Login: ${SITE_URL}/wp/wp-login.php"
+  if [ "$MODE" = "headless" ]; then
+    echo ""
+    echo "API Auth (POST to /wp-json/stump/v1/auth/login):"
+    echo "  {\"username\": \"$ADMIN_USER\", \"password\": \"$PASS\"}"
+  fi
 } >> "$SUMMARY"
 
 echo "[admin] Credentials captured for summary."
