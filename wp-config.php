@@ -19,18 +19,12 @@
      * MySQL and database settings
      */
     define('DB_CHARSET', $_ENV['DB_CHARSET'] ?? 'utf8mb4');
-    define('DB_COLLATE', $_ENV['DB_COLLATE'] ?? '');
+    define('DB_COLLATE', $_ENV['DB_COLLATE'] ?? 'utf8mb4_unicode_ci');
     define('DB_NAME', $_ENV['DB_NAME'] ?? 'wordpress');
     define('DB_USER', $_ENV['DB_USER'] ?? 'root');
     define('DB_PASSWORD', $_ENV['DB_PASSWORD'] ?? '');
     define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
     $table_prefix = $_ENV['TABLE_PREFIX'] ?? 'wp_';
-
-    /**
-     * Default charset / collation
-     */
-    define('DB_CHARSET', 'utf8mb4');
-    define('DB_COLLATE', 'utf8mb4_unicode_ci');
 
     /**
      * Theme slug and default URL
