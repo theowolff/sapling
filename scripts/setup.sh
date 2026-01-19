@@ -161,7 +161,7 @@ fi
 DEFAULT_HOME="http://${SLUG}.localhost:8080"
 {
   echo ""
-  echo "Mode: ${MODE^^}"
+  echo "Mode: $(printf '%s' "$MODE" | tr '[:lower:]' '[:upper:]')"
   echo "Open WordPress: ${WP_HOME:-$DEFAULT_HOME}"
   echo "Adminer:        http://localhost:8081"
   if [ "$MODE" = "headless" ]; then
