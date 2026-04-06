@@ -66,6 +66,27 @@
     splng_set_memory_defaults('128M', '256M');
 
     /**
+     * Allow .env to override constants that environment files would set.
+     * Each environment file uses if(!defined(...)) guards, so any constant
+     * defined here from .env will take precedence.
+     */
+    $splng_env_booleans = [
+        'WP_DEBUG',
+        'WP_DEBUG_LOG',
+        'WP_DEBUG_DISPLAY',
+        'DISALLOW_FILE_EDIT',
+        'DISALLOW_FILE_MODS',
+        'CONCATENATE_SCRIPTS',
+        'AUTOMATIC_UPDATER_DISABLED',
+    ];
+
+    foreach ($splng_env_booleans as $key) {
+        if (isset($_ENV[$key]) && ! defined($key)) {
+            define($key, filter_var($_ENV[$key], FILTER_VALIDATE_BOOLEAN));
+        }
+    }
+
+    /**
      * Load environment-specific additional settings
      */
     $env_type = $_ENV['WP_ENV'] ?? 'development';

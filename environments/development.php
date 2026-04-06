@@ -8,11 +8,6 @@
      */
 
     /**
-     * Ensure WordPress is loaded before running environment config.
-     */
-    defined('ABSPATH') || exit;
-
-    /**
      * Enable debugging.
      */
     if( !defined('WP_DEBUG')) {
