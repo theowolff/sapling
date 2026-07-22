@@ -78,6 +78,7 @@
         'DISALLOW_FILE_MODS',
         'CONCATENATE_SCRIPTS',
         'AUTOMATIC_UPDATER_DISABLED',
+        'DISABLE_WP_CRON',
     ];
 
     foreach ($splng_env_booleans as $key) {

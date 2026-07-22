@@ -50,3 +50,17 @@
     if(! defined('AUTOMATIC_UPDATER_DISABLED')) {
         define('AUTOMATIC_UPDATER_DISABLED', true);
     }
+
+    /**
+     * Disable WP-Cron; run it from a real system cron instead.
+     */
+    if(! defined('DISABLE_WP_CRON')) {
+        define('DISABLE_WP_CRON', true);
+    }
+
+    /**
+     * Disable script concatenation in wp-admin.
+     */
+    if(! defined('CONCATENATE_SCRIPTS')) {
+        define('CONCATENATE_SCRIPTS', false);
+    }

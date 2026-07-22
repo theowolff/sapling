@@ -10,7 +10,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # WP-CLI
 RUN curl -o /usr/local/bin/wp -L https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar     && chmod +x /usr/local/bin/wp
 
-COPY user.ini /usr/local/etc/php/conf.d/uploads.ini
+COPY .user.ini /usr/local/etc/php/conf.d/uploads.ini
 
 WORKDIR /var/www/html
 

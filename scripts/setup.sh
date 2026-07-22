@@ -58,7 +58,7 @@ CHILD_REPO="${CHILD_REPO:-$DEFAULT_CHILD_REPO}"
 export IS_HEADLESS MODE PARENT_DIR CHILD_REPO_DIR DEFAULT_PREFIX
 
 # ------------------------------------------------------------------------------
-# Setup summary file (repo root) — truncate
+# Setup summary file (repo root) - truncate
 # ------------------------------------------------------------------------------
 SUMMARY="$(pwd)/.setup_summary.txt"
 : > "$SUMMARY"
@@ -72,6 +72,7 @@ cd wp-content/themes
 # Clone/update parent
 if [ -z "${THEME_REPO:-}" ]; then echo "ERROR: THEME_REPO not set"; exit 1; fi
 if [ ! -d "${PARENT_DIR}/.git" ]; then
+  if [ -d "${PARENT_DIR}" ]; then rm -rf "${PARENT_DIR}"; fi
   echo "[setup] Cloning parent theme: ${PARENT_DIR}"
   git clone "$THEME_REPO" "$PARENT_DIR"
 else
@@ -82,6 +83,7 @@ fi
 # Clone/update child template repo (will be renamed/patched)
 if [ -z "${CHILD_REPO:-}" ]; then echo "ERROR: CHILD_REPO not set"; exit 1; fi
 if [ ! -d "${CHILD_REPO_DIR}/.git" ]; then
+  if [ -d "${CHILD_REPO_DIR}" ]; then rm -rf "${CHILD_REPO_DIR}"; fi
   echo "[setup] Cloning child theme template: ${CHILD_REPO_DIR}"
   git clone "$CHILD_REPO" "$CHILD_REPO_DIR"
 else
@@ -143,7 +145,7 @@ if [ "$MODE" = "traditional" ]; then
   # Guard container-side child build if marker exists
   $DC exec php bash -lc "set -e; cd wp-content/themes/${SLUG}; \
     if [ -f .use_host_node ]; then \
-      echo '[setup] .use_host_node present — skipping container npm/gulp for child'; \
+      echo '[setup] .use_host_node present - skipping container npm/gulp for child'; \
     else \
       ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \
     fi" || true

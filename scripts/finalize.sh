@@ -98,7 +98,7 @@ EOF
 echo "[finalize] Wrote .gitignore"
 
 # ------------------------------------------------------------------------------
-# 2) Install sync.sh (rehydrates core + parent, links child) — no env writes
+# 2) Install sync.sh (rehydrates core + parent, links child) - no env writes
 # ------------------------------------------------------------------------------
 cat > scripts/sync.sh <<EOSH
 #!/usr/bin/env bash
@@ -109,7 +109,7 @@ PARENT_REPO="\${PARENT_REPO:-${DEFAULT_PARENT_REPO}}"
 PARENT_DIR="${PARENT_DIR}"
 MODE="${MODE}"
 
-ROOT="\$(cd "\$(dirname "\$0")" && pwd)"
+ROOT="\$(cd "\$(dirname "\$0")/.." && pwd)"
 CORE_DIR="\$ROOT/core"
 
 # Load env to read CHILD_THEME_SLUG (user must provide .env manually)
@@ -164,7 +164,7 @@ if [ "\$MODE" = "traditional" ]; then
   # Child build inside container ONLY if we are not using host node for the child
   \$DC exec php bash -lc "set -e; cd wp-content/themes/\$SLUG; \\
     if [ -f .use_host_node ]; then \\
-      echo '[sync] .use_host_node present — skipping container npm/gulp for child'; \\
+      echo '[sync] .use_host_node present - skipping container npm/gulp for child'; \\
     else \\
       ([ -f package-lock.json ] && npm ci || npm i); npx gulp dev || true; \\
     fi" || true
@@ -213,7 +213,7 @@ if [ -n "$REMOTE_URL" ]; then
   git push --set-upstream origin main
   echo "[finalize] Pushed to $REMOTE_URL (branch: main)"
 else
-  echo "[finalize] No GIT_REMOTE_URL in .env — skipped adding/pushing remote."
+  echo "[finalize] No GIT_REMOTE_URL in .env - skipped adding/pushing remote."
 fi
 
 echo "[finalize] Done."

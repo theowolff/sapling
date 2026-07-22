@@ -3,7 +3,7 @@ services:
     build: .
     container_name: sapling-php
     ports:
-      - "8080:80"
+      - "${PHP_PORT:-8080}:80"
     volumes:
       - ./:/var/www/html
     depends_on:
@@ -16,14 +16,14 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
     ports:
-      - "3307:3306"
+      - "${DB_PORT:-3307}:3306"
     volumes:
       - dbdata:/var/lib/mysql
   adminer:
     image: adminer:4
     container_name: sapling-adminer
     ports:
-      - "8081:8080"
+      - "${ADMINER_PORT:-8081}:8080"
     depends_on:
       - db
 

@@ -43,3 +43,17 @@
     if(! defined('DISALLOW_FILE_MODS')) {
         define('DISALLOW_FILE_MODS', false);
     }
+
+    /**
+     * Disable WP-Cron; run it from a real system cron instead.
+     */
+    if(! defined('DISABLE_WP_CRON')) {
+        define('DISABLE_WP_CRON', true);
+    }
+
+    /**
+     * Disable script concatenation in wp-admin.
+     */
+    if(! defined('CONCATENATE_SCRIPTS')) {
+        define('CONCATENATE_SCRIPTS', false);
+    }
